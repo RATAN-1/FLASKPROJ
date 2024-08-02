@@ -1,0 +1,86 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import Select from 'react-select';
+
+function App() {
+    const [jsonInput, setJsonInput] = useState('');
+    const [response, setResponse] = useState(null);
+    const [options, setOptions] = useState([]);
+    const [selectedOptions, setSelectedOptions] = useState([]);
+    const [error, setError] = useState(null);
+
+    const dropdownOptions = [
+        { value: 'alphabets', label: 'Alphabets' },
+        { value: 'numbers', label: 'Numbers' },
+        { value: 'highest_alphabet', label: 'Highest Alphabet' }
+    ];
+
+    const handleSubmit = async () => {
+        try {
+            const parsedInput = JSON.parse(jsonInput);
+            const res = await axios.post('https://your-backend-url.herokuapp.com/bfhl', parsedInput);
+            setResponse(res.data);
+            setOptions(dropdownOptions);
+            setError(null);
+        } catch (err) {
+            setError('Invalid JSON or failed to fetch data');
+            setOptions([]);
+            setResponse(null);
+        }
+    };
+
+    const handleDropdownChange = (selected) => {
+        setSelectedOptions(selected);
+    };
+
+    const renderResponse = () => {
+        if (!response) return null;
+
+        let displayData = {};
+        selectedOptions.forEach(option => {
+            if (option.value === 'alphabets') {
+                displayData['Alphabets'] = response.array_alphabets;
+            }
+            if (option.value === 'numbers') {
+                displayData['Numbers'] = response.array_numbers;
+            }
+            if (option.value === 'highest_alphabet') {
+                displayData['Highest Alphabet'] = response.array_alphabets.sort().reverse()[0];
+            }
+        });
+
+        return (
+            <div>
+                {Object.entries(displayData).map(([key, value]) => (
+                    <div key={key}>
+                        <strong>{key}:</strong> {Array.isArray(value) ? value.join(', ') : value}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="App">
+            <h1>{'Your Roll Number'}</h1>
+            <input
+                type="text"
+                placeholder='Enter JSON'
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+            />
+            <button onClick={handleSubmit}>Submit</button>
+            {error && <div style={{ color: 'red' }}>{error}</div>}
+            {options.length > 0 && (
+                <Select
+                    isMulti
+                    options={options}
+                    onChange={handleDropdownChange}
+                />
+            )}
+            {renderResponse()}
+        </div>
+    );
+}
+
+export default App;
